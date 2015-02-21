@@ -26,21 +26,25 @@ def recognize(image):
     out = np.zeros(im.shape,np.uint8)
     rois = get_roi(t, b)
     print b
-    display_bounds(im.copy(), b)
+    #display_bounds(im.copy(), b)
 
     x = 10
+    str = ''
     for roi in rois:
         roi = np.float32(roi)
         retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
-        value = str(chr(int(results[0][0])))
-        cv2.putText(out,value,(x,30),0,1,(0,255,0))
+        value = chr(int(results[0][0]))
+        str += value
+        #cv2.putText(out,value,(x,30),0,1,(0,255,0))
         x += 20
 
-    cv2.imshow('im',im)
-    cv2.imshow('out',out)
-    key = cv2.waitKey(0)
-    if key==27:
-        sys.exit(0)
+    #cv2.imshow('im',im)
+    #cv2.imshow('out',out)
+    #key = cv2.waitKey(0)
+    print str
+    raw_input()
+    #if key==27:
+    #    sys.exit(0)
 
 
 for i in xrange(410,460):
