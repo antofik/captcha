@@ -32,9 +32,9 @@ def train(image, index):
         return
 
 
-    display_bounds(im.copy(), b)
-    cv2.imshow("im", t)
-    cv2.waitKey(0)
+    #display_bounds(im.copy(), b)
+    #cv2.imshow("im", t)
+    #cv2.waitKey(0)
 
     print 'Enter captcha %s' % image
     if index in cache:
@@ -56,7 +56,7 @@ def train(image, index):
     rois = get_roi(t, b)
     for i in xrange(5):
         roi = rois[i]
-        #save_letter(roi.reshape((height, width, 1)), answers[i], index, i)
+        save_letter(roi.reshape((height, width, 1)), answers[i], index, i)
 
-for i in xrange(100,1000):
+for i in xrange(0,1000):
     train('images/%s.jpg' % i, str(i))

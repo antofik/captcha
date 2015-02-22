@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import operator
 
 width = 20
@@ -36,7 +37,52 @@ def filter(file):
     return im, t
 
 
-filter_image = filter
+def filter3(filename):
+    def remove_small_bounds(im, size=0):
+        contours, _ = cv2.findContours(im.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        #[cv2.boundingRect(c) for c in contours if cv2.contourArea(c) < 10]
+        for i in xrange(len(contours)):
+            if cv2.contourArea(contours[i]) > size:
+                continue
+            black = (0,0,0)
+            cv2.drawContours(im, contours, i, black, 3)
+        return im
+
+    im = cv2.imread(filename)
+
+    t = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    t = -t
+    _, t = cv2.threshold(t, 45, 255, cv2.THRESH_BINARY)
+
+    tx = remove_small_bounds(t.copy())
+
+    k_vertical = np.array([[0,1,0],[0,0,0],[0,1,0]], np.uint8)
+    k_horizontal = np.array([[0,0,0],[1,0,1],[0,0,0]], np.uint8)
+
+    r,g,b = cv2.split(im)
+    t2 = cv2.bitwise_xor(b,g)
+
+    def transform(im):
+        _, t2 = cv2.threshold(im, 50, 255, cv2.THRESH_BINARY)
+        t21 = cv2.morphologyEx(t2, cv2.MORPH_OPEN, k_vertical, iterations=1)
+        t22 = cv2.morphologyEx(t2, cv2.MORPH_OPEN, k_horizontal, iterations=1)
+        return cv2.bitwise_or(t21,t22)
+    t2 = transform(tx)
+
+    t2 = cv2.GaussianBlur(t2, (7, 7), 0)
+    _, t2 = cv2.threshold(t2, 30, 255, cv2.THRESH_BINARY)
+    t2 = cv2.bitwise_and(t2, tx)
+
+    mask = remove_small_bounds(t2.copy(), 5)
+    mask = cv2.GaussianBlur(mask, (7,7), 0)
+    _,t3 = cv2.threshold(mask, 10, 255, 0)
+    t3 = cv2.bitwise_and(t3, t2)
+
+    return im, t3
+
+
+
+filter_image = filter3
 
 
 def find_letters(im):
