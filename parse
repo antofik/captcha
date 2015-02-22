@@ -35,10 +35,21 @@ def recognize(image):
     out = np.zeros(im.shape,np.uint8)
     rois = get_roi(t, b)
     str = ''
-    for roi in rois:
-        roi = np.float32(roi)
+    for i in xrange(len(b)):
+        roi = np.float32(rois[i])
+        x,y,w,h = b[i]
         retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
         value = chr(int(results[0][0]))
+
+        bad = ['l', 'i', 'j']
+        if value in bad:
+            if y < 10:
+                value = 'l'
+            elif h > 12:
+                value = 'j'
+            else:
+                value = 'i'
+
         str += value
 
     print str

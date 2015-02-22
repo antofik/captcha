@@ -37,10 +37,21 @@ def recognize(image):
         retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
         value = chr(int(results[0][0]))
         str += value
-        if w > 26:
-            cv2.putText(out,value,(x,30),0,1,(255,0,0))
-        elif h > 28:
+        bad = ['l', 'i', 'j']
+        if value in bad:
+            if y < 10:
+                value = 'l'
+            elif h > 12:
+                value = 'j'
+            else:
+                value = 'i'
+
+        if h > 23:
             cv2.putText(out,value,(x,30),0,1,(0,100, 255))
+            #cv2.putText(out,"|",(x,10),0,1,(0,0, 255))
+        elif w > 26:
+            cv2.putText(out,value,(x,30),0,1,(255,0,0))
+            #cv2.putText(out,"_",(x,10),0,1,(0,0,255))
         else:
             cv2.putText(out,value,(x,30),0,1,(0,255,0))
         x += 20
