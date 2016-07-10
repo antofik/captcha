@@ -40,7 +40,7 @@ def convert(result):
     return ''.join([get_key(keys[i]) for i in result])
 
 
-if True:
+if False:
     for i in xrange(500,600):
         orig, result = recognize('images/%s.jpg' % i)
         value = convert(result)
