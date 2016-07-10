@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import base64
+
 
 import sys
 import numpy as np
@@ -31,6 +31,6 @@ except Exception, e:
 
 orig, result = recognize(filename)
 if result:
-    print base64.b64encode(convert(result))
+    print ''.join([keys[i] for i in result])
 else:
     print "false"
