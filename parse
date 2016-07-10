@@ -31,6 +31,6 @@ except Exception, e:
 
 orig, result = recognize(filename)
 if result:
-    print convert(result)
+    print ''.join([keys[i] for i in result])
 else:
     print "false"
