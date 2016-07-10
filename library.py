@@ -1,10 +1,15 @@
+# encoding=utf8
 import cv2
 import numpy as np
 import operator
 
 width = 20
 height = 24
-keys = [i for i in xrange(97, 123)]
+keys_rus = [u'а', u'б', u'в', u'г', u'д', u'е', u'ж', u'и', u'к', u'м', u'н', u'п', u'р', u'с', u'т', u'у', u'э', u'ю', u'я', u'2', u'4', u'5', u'6', u'7', u'8', u'9']
+keys = [u'a', u'b', u'v', u'g', u'd', u'e', u'z', u'i', u'k', u'm', u'n', u'p', u'r', u's', u't', u'u', u'q', u'w', u'y', u'2', u'4', u'5', u'6', u'7', u'8', u'9']
+
+def get_key(en_key):
+    return keys_rus[keys.index(en_key)]
 
 cHigh = [ord(c) for c in ['q', 't', 'y', 'p', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'b']] # 20x28
 cWide = [ord(c) for c in ['w', 'm']] # 26x22

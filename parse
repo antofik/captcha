@@ -3,56 +3,34 @@
 
 import sys
 import numpy as np
+from guess import recognize
+from guess import convert
 from library import *
 import cv2
 import json
 
-if len(sys.argv)!=2:
-	print '\n Usage: python ./parse <path to captcha image>\n'
-	sys.exit(0)
+if len(sys.argv) != 2:
+    print '\n Usage: python ./parse <path to captcha image>\n'
+    sys.exit(0)
 
 filename = sys.argv[1]
 
 #######   training part    ###############
-samples = np.loadtxt('generalsamples.data',np.float32)
-responses = np.loadtxt('generalresponses.data',np.float32)
-responses = responses.reshape((responses.size,1))
+samples = np.loadtxt('generalsamples.data', np.float32)
+responses = np.loadtxt('generalresponses.data', np.float32)
+responses = responses.reshape((responses.size, 1))
 
 model = cv2.KNearest()
-model.train(samples,responses)
+model.train(samples, responses)
 
 try:
     with open('cache.txt', 'r') as f:
         cache = json.loads(f.read()) or {}
-except Exception,e:
+except Exception, e:
     cache = {}
 
-############################# testing part  #########################
-
-def recognize(image):
-    im, t = filter_image(image)
-    b = find_letters(t.copy())
-    out = np.zeros(im.shape,np.uint8)
-    rois = get_roi(t, b)
-    str = ''
-    for i in xrange(len(b)):
-        roi = np.float32(rois[i])
-        x,y,w,h = b[i]
-        retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
-        value = chr(int(results[0][0]))
-
-        bad = ['l', 'i', 'j']
-        if value in bad:
-            if y < 10:
-                value = 'l'
-            elif h > 12:
-                value = 'j'
-            else:
-                value = 'i'
-
-        str += value
-
-    print str
-
-
-recognize(filename)
+orig, result = recognize(filename)
+if result:
+    print convert(result)
+else:
+    print "false"

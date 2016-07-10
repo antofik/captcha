@@ -1,3 +1,4 @@
+import __builtin__
 import cv2
 from cv2 import *
 import sys
@@ -6,70 +7,66 @@ import numpy as np
 
 def remove_small_bounds(im, size=0):
     contours, _ = cv2.findContours(im.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    #[cv2.boundingRect(c) for c in contours if cv2.contourArea(c) < 10]
+    [cv2.boundingRect(c) for c in contours if cv2.contourArea(c) < 10]
     for i in xrange(len(contours)):
         if cv2.contourArea(contours[i]) > size:
             continue
-        black = (0,0,0)
+        black = (100,0,0)
         cv2.drawContours(im, contours, i, black, 3)
     return im
 
 
-
-
-def filter_image(filename):
+def split_to_images(filename):
     im = imread(filename)
-
     t = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    t = -t
-    _, t = cv2.threshold(t, 45, 255, cv2.THRESH_BINARY)
+    images = []
+    for i in xrange(5):
+        width = 40
+        height = 60
+        x = i*width
+        images.append(t[0:height, x:x+width])
+    return images, im
 
-    tx = remove_small_bounds(t.copy())
+def parse_image(filename):
+    images, orig = split_to_images(filename)
+    letters = [filter_image(im) for im in images]
+    #imshow("origin", orig)
+    #for i in letters:
+    #    imshow("xxx", i)
+    #    cv2.waitKey(0)
+    return orig, letters if len(letters) == 5 else None
 
-    k_crest = np.array([[0,1,0],[1,1,1],[0,1,0]], np.uint8)
-    k_diagonal_crest = np.array([[1,0,1],[0,1,0],[1,0,1]], np.uint8)
-    k_square = np.array([[1,1,1],[1,0,1],[1,1,1]], np.uint8)
-    k_vertical = np.array([[0,1,0],[0,0,0],[0,1,0]], np.uint8)
-    k_horizontal = np.array([[0,0,0],[1,0,1],[0,0,0]], np.uint8)
-    k_lr = np.array([[0,0,1],[0,0,0],[1,0,0]], np.uint8)
+def filter_image(im):
+    t = - im
+    t = cv2.GaussianBlur(t, (3, 3), 0)
+    _, t = cv2.threshold(t, 140, 255, cv2.THRESH_BINARY)
 
-    r,g,b = split(im)
-    t2 = bitwise_xor(b,g)
+    mask = GaussianBlur(t, (3,3), 0)
+    contours, _ = cv2.findContours(mask.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-    def transform(im):
-        _, t2 = cv2.threshold(im, 50, 255, cv2.THRESH_BINARY)
-        t21 = morphologyEx(t2, cv2.MORPH_OPEN, k_vertical, iterations=1)
-        t22 = morphologyEx(t2, cv2.MORPH_OPEN, k_horizontal, iterations=1)
-        return bitwise_or(t21,t22)
-    t2 = transform(tx)
+    if len(contours)==0:
+        return None
 
-    t2 = cv2.GaussianBlur(t2, (7, 7), 0)
+    contour = sorted(contours, key=lambda x : -cv2.contourArea(x))[0]
+    t5 = cv2.cvtColor(t, cv2.COLOR_GRAY2BGR)
+    rect = cv2.minAreaRect(contour)
+    (x,y), (w,h), angle = rect
+    x,y,w,h,angle = (int(i) for i in [x,y,w,h,angle])
+    if angle < -45:
+        angle += 90
+    box = cv2.cv.BoxPoints(rect)
+    box = np.int0(box)
+    cv2.drawContours(t5,[box],0,(0,255,0),1)
 
-    #t2 = dilate(t2, k_lr)
-    _, t2 = cv2.threshold(t2, 30, 255, cv2.THRESH_BINARY)
-    t2 = bitwise_and(t2, tx)
-
-    mask = remove_small_bounds(t2.copy(), 5)
-    mask = GaussianBlur(mask, (7,7), 0)
-    _,t3 = threshold(mask, 10, 255, 0)
-    t3 = bitwise_and(t3, t2)
-
-
-    #t2 = cv2.erode(t, kernel2, iterations=1)
-    #t3 = dilate(bitwise_or(cv2.erode(t, kernel3, iterations=1), t2), kernel = np.array([[1,0,1],[0,1,0],[0,0,0]], np.uint8))
-    #t3 = erode(t3, k_crest)
-    #t3 = dilate(t3, k_diagonal_crest)
-    #t2 = cv2.dilate(t2, kernel, iterations=1)
-
-    #imshow("im", im)
-    imshow("t", t)
-    imshow("t2", t2)
-    imshow("t3", t3)
-    imshow("tx", tx)
-    #imshow("t3", t3)
-    if waitKey(0) == 27:
-        sys.exit(0)
-
+    M = cv2.getRotationMatrix2D((x,y), angle, 1)
+    t2 = cv2.warpAffine(t, M, (40,60))
+    if w > h: w,h=h,w
+    t6 = cv2.getRectSubPix(t2, (int(w),int(h)), (x, y))
+    #imshow("t", t)
+    #imshow("t2", t2)
+    #imshow("t5", t5)
+    #imshow("t6", t6)
+    return t6
 
 for i in xrange(159,1000):
-    filter_image('images/%s.jpg' % (i))
+    parse_image('images/%s.jpg' % (i))

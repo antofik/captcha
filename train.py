@@ -5,16 +5,20 @@ import os
 samples = np.empty((0, width*height))
 responses = []
 
-for key in keys:
-    print chr(key)
-    for (dirpath, dirnames, filenames) in os.walk('letters/%s/' % chr(key)):
+for i in xrange(len(keys)):
+    key = keys[i]
+    print key
+    for (dirpath, dirnames, filenames) in os.walk(u'letters/%s/' % key):
         for filename in filenames:
             if filename.endswith(".png"):
-                roi = cv2.imread('letters/%s/%s' % (chr(key), filename))
+                path = os.path.abspath(u'letters/%s/%s' % (key, filename))
+                #path = u'letters/%s/%s' % (key, filename)
+                roi = cv2.imread(path)
+                roi = cv2.resize(roi, (width, height))
                 roi,g,b = cv2.split(roi)
                 roi = roi.reshape((1, width * height))
                 samples = np.append(samples, roi, 0)
-                responses.append(key)
+                responses.append(i)
 
 
 responses = np.array(responses, np.float32)

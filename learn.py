@@ -1,7 +1,8 @@
 import sys
 import os
+import cv2
 import numpy as np
-from library import *
+from filter_image import parse_image
 import json
 
 global cache
@@ -26,37 +27,33 @@ def train(image, index):
     global samples
     global cache
 
-    im, t = filter_image(image)
-    b = find_letters(t.copy())
-    if len(b) != 5:
+    orig, letters = parse_image(image)
+    if not letters:
         return
 
-
-    #display_bounds(im.copy(), b)
-    #cv2.imshow("im", t)
-    #cv2.waitKey(0)
-
-    print 'Enter captcha %s' % image
+    answers = []
     if index in cache:
         answers = cache[index]
+        for i in range(len(answers)):
+            save_letter(letters[i], answers[i], index, i)
     else:
-        answers = []
-        while len(answers)<5:
+        cv2.imshow("origin", orig)
+        for i in range(len(letters)):
+            letter = letters[i]
+            cv2.imshow("im", letter)
+
             key = cv2.waitKey(0)
             if key == 27:
                 sys.exit(0)
-            elif key == 8:
-                answers = answers[:-1]
+            elif key == 32:
+                continue
             elif 256 > key > 32:
                 answers.append(key)
-        cache[index] = answers
-        with open('cache.txt', 'w+') as f:
-            f.write(json.dumps(cache))
-
-    rois = get_roi(t, b)
-    for i in xrange(5):
-        roi = rois[i]
-        save_letter(roi.reshape((height, width, 1)), answers[i], index, i)
+                save_letter(letter, key, index, i)
+        if len(answers) == 5:
+            cache[index] = answers
+            with open('cache.txt', 'w+') as f:
+                f.write(json.dumps(cache))
 
 for i in xrange(0,1000):
     train('images/%s.jpg' % i, str(i))

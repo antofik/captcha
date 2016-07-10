@@ -1,5 +1,5 @@
 import sys
-import numpy as np
+from filter_image import parse_image
 from library import *
 import cv2
 import json
@@ -21,48 +21,31 @@ except Exception,e:
 ############################# testing part  #########################
 
 def recognize(image):
-    im, t = filter_image(image)
-    b = find_letters(t.copy())
-    out = np.zeros(im.shape,np.uint8)
-    rois = get_roi(t, b)
-    print b
-    #display_bounds(im.copy(), b)
-
-    x = 10
-    str = ''
-    for i in xrange(len(b)):
-        roi = rois[i]
-        x,y,w,h = b[i]
+    orig, letters = parse_image(image)
+    result = []
+    for i in xrange(len(letters)):
+        roi = letters[i]
+        w,h = roi.shape
+        if w < 10 or h < 10:
+            return orig, []
+        roi = cv2.resize(roi, (width, height))
+        roi = roi.reshape((1, width * height))
         roi = np.float32(roi)
         retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
-        value = chr(int(results[0][0]))
-        str += value
-        bad = ['l', 'i', 'j']
-        if value in bad:
-            if y < 10:
-                value = 'l'
-            elif h > 12:
-                value = 'j'
-            else:
-                value = 'i'
-
-        if h > 23:
-            cv2.putText(out,value,(x,30),0,1,(0,100, 255))
-            #cv2.putText(out,"|",(x,10),0,1,(0,0, 255))
-        elif w > 26:
-            cv2.putText(out,value,(x,30),0,1,(255,0,0))
-            #cv2.putText(out,"_",(x,10),0,1,(0,0,255))
-        else:
-            cv2.putText(out,value,(x,30),0,1,(0,255,0))
-        x += 20
-
-    cv2.imshow('im',im)
-    cv2.imshow('out',out)
-    key = cv2.waitKey(0)
-    print str
-    if key==27:
-        sys.exit(0)
+        result.append(int(results[0][0]))
+    return orig, result
 
 
-for i in xrange(500,600):
-    recognize('images/%s.jpg' % i)
+def convert(result):
+    return ''.join([get_key(keys[i]) for i in result])
+
+
+if True:
+    for i in xrange(500,600):
+        orig, result = recognize('images/%s.jpg' % i)
+        value = convert(result)
+        cv2.imshow("orig", orig)
+        print value
+        key = cv2.waitKey(0)
+        if key==27:
+            sys.exit(0)
