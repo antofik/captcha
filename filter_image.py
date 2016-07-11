@@ -89,7 +89,7 @@ def filter_image(im):
     #imshow("t", t)
     #imshow("t2", t2)
     #imshow("t5", t5)
-    imshow("t6", t6)
+    #imshow("t6", t6)
     return t6
 
 def recognize(image):
