@@ -21,7 +21,7 @@ except Exception,e:
 ############################# testing part  #########################
 
 
-if True:
+if False:
     for i in xrange(500,600):
         orig, result = recognize('images/%s.jpg' % i)
         value = convert(result)
