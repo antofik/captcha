@@ -1,5 +1,5 @@
 import sys
-from filter_image import parse_image
+from filter_image import parse_image, recognize, convert
 from library import *
 import cv2
 import json
@@ -20,27 +20,8 @@ except Exception,e:
 
 ############################# testing part  #########################
 
-def recognize(image):
-    orig, letters = parse_image(image)
-    result = []
-    for i in xrange(len(letters)):
-        roi = letters[i]
-        w,h = roi.shape
-        if w < 10 or h < 10:
-            return orig, []
-        roi = cv2.resize(roi, (width, height))
-        roi = roi.reshape((1, width * height))
-        roi = np.float32(roi)
-        retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
-        result.append(int(results[0][0]))
-    return orig, result
 
-
-def convert(result):
-    return ''.join([get_key(keys[i]) for i in result])
-
-
-if False:
+if True:
     for i in xrange(500,600):
         orig, result = recognize('images/%s.jpg' % i)
         value = convert(result)

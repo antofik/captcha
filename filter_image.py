@@ -1,8 +1,28 @@
+# encoding=utf-8
+
 import __builtin__
+import os
 import cv2
 from cv2 import *
 import sys
+from library import *
 import numpy as np
+from library import height
+from library import width
+
+#######   training part    ###############
+samples = np.loadtxt('generalsamples.data',np.float32)
+responses = np.loadtxt('generalresponses.data',np.float32)
+responses = responses.reshape((responses.size,1))
+
+model = cv2.KNearest()
+model.train(samples,responses)
+
+
+def wait():
+    key = cv2.waitKey(0)
+    if key == 27:
+        sys.exit(0)
 
 
 def remove_small_bounds(im, size=0):
@@ -17,7 +37,9 @@ def remove_small_bounds(im, size=0):
 
 
 def split_to_images(filename):
-    im = imread(filename)
+    im = imread(filename.encode('utf8'))
+    if im is None:
+        return None, None
     t = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     images = []
     for i in xrange(5):
@@ -29,6 +51,8 @@ def split_to_images(filename):
 
 def parse_image(filename):
     images, orig = split_to_images(filename)
+    if not images:
+        return None, None
     letters = [filter_image(im) for im in images]
     #imshow("origin", orig)
     #for i in letters:
@@ -65,8 +89,55 @@ def filter_image(im):
     #imshow("t", t)
     #imshow("t2", t2)
     #imshow("t5", t5)
-    #imshow("t6", t6)
+    imshow("t6", t6)
     return t6
 
-for i in xrange(159,1000):
-    parse_image('images/%s.jpg' % (i))
+def recognize(image):
+    orig, letters = parse_image(image)
+    result = []
+    for i in xrange(len(letters)):
+        roi = letters[i]
+        w,h = roi.shape
+        if w < 10 or h < 10:
+            return orig, []
+        roi = cv2.resize(roi, (width, height))
+        roi = roi.reshape((1, width * height))
+        roi = np.float32(roi)
+        retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
+        result.append(int(results[0][0]))
+    return orig, result
+
+
+def convert(result):
+    return ''.join([get_key(keys[i]) for i in result])
+
+def convert_back(result):
+    for ch in result:
+        if not ch in keys_rus:
+            return result
+    return ''.join([keys[keys_rus.index(ch)] for ch in result])
+
+
+if False:
+    for (dirpath, dirnames, filenames) in os.walk(u'recognized'):
+        for filename in filenames:
+            path = u'recognized/%s' % (filename)
+            path = os.path.abspath(path)
+            orig, letters = parse_image(path)
+            result = []
+            imshow("original", orig)
+            for i in xrange(len(letters)):
+                roi = letters[i]
+                imshow("letter", roi)
+                w,h = roi.shape
+                roi = cv2.resize(roi, (width, height))
+                imshow("letter2", roi)
+                print w,h
+                wait()
+
+                roi = roi.reshape((1, width * height))
+                roi = np.float32(roi)
+                retval, results, neigh_resp, dists = model.find_nearest(roi, k=5)
+                result.append(int(results[0][0]))
+
+            print convert(result)
